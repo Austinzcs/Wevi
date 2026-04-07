@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { generateItinerary } from "@/lib/openai";
+import { generateItinerary } from "@/lib/ai";
 import { differenceInDays } from "date-fns";
 
 const generateSchema = z.object({
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = await req.json().catch(() => ({}));
   const { preferences } = generateSchema.parse(body);
 
-  // Generate via OpenAI
+  // Generate via Claude AI
   const generatedDays = await generateItinerary({
     destination: `${trip.destination}${trip.country ? `, ${trip.country}` : ""}`,
     startDate: trip.startDate.toISOString().split("T")[0],
