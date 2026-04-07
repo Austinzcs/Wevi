@@ -1,0 +1,272 @@
+// This is your Prisma schema file
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Users & Auth ────────────────────────────────────────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  emailVerified  DateTime?
+  passwordHash   String?
+  image          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  accounts       Account[]
+  sessions       Session[]
+  ownedTrips     Trip[]          @relation("TripOwner")
+  tripMembers    TripMember[]
+  availabilities Availability[]
+  destinations      Destination[]
+  destinationVotes  DestinationVote[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── Trips ───────────────────────────────────────────────────────────────────
+
+model Trip {
+  id          String     @id @default(cuid())
+  title       String
+  description String?    @db.Text
+  status      TripStatus @default(PLANNING)
+  coverImage  String?
+
+  // Confirmed dates (set after availability coordination)
+  startDate   DateTime?
+  endDate     DateTime?
+
+  // Confirmed destination
+  destination String?
+  country     String?
+
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  owner          User           @relation("TripOwner", fields: [ownerId], references: [id])
+  members        TripMember[]
+  invitations    Invitation[]
+  availabilities Availability[]
+  destinations   Destination[]
+  itinerary      ItineraryDay[]
+  meetings       Meeting[]
+
+  @@map("trips")
+}
+
+enum TripStatus {
+  PLANNING      // Initial stage: gathering members
+  SCHEDULING    // Collecting availability
+  DESTINATION   // Discussing destinations
+  ITINERARY     // Building the itinerary
+  CONFIRMED     // Trip is confirmed
+  COMPLETED     // Trip is done
+  CANCELLED
+}
+
+model TripMember {
+  id       String           @id @default(cuid())
+  tripId   String
+  userId   String
+  role     TripMemberRole   @default(MEMBER)
+  joinedAt DateTime         @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, userId])
+  @@map("trip_members")
+}
+
+enum TripMemberRole {
+  OWNER
+  MEMBER
+}
+
+model Invitation {
+  id        String           @id @default(cuid())
+  tripId    String
+  email     String
+  token     String           @unique @default(cuid())
+  status    InvitationStatus @default(PENDING)
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("invitations")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+// ─── Availability ─────────────────────────────────────────────────────────────
+
+model Availability {
+  id        String   @id @default(cuid())
+  tripId    String
+  userId    String
+  startTime DateTime // hour-level granularity
+  endTime   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("availabilities")
+}
+
+// ─── Destinations ─────────────────────────────────────────────────────────────
+
+model Destination {
+  id          String            @id @default(cuid())
+  tripId      String
+  userId      String            // who suggested it
+  name        String
+  country     String?
+  description String?           @db.Text
+  imageUrl    String?
+  votes       Int               @default(0)
+  createdAt   DateTime          @default(now())
+
+  trip        Trip              @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id])
+  votersList  DestinationVote[]
+
+  @@map("destinations")
+}
+
+model DestinationVote {
+  id            String      @id @default(cuid())
+  destinationId String
+  userId        String
+  createdAt     DateTime    @default(now())
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([destinationId, userId])
+  @@map("destination_votes")
+}
+
+// ─── Itinerary ────────────────────────────────────────────────────────────────
+
+model ItineraryDay {
+  id        String          @id @default(cuid())
+  tripId    String
+  date      DateTime        @db.Date
+  dayNumber Int
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  trip       Trip            @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  activities ItineraryItem[]
+
+  @@unique([tripId, date])
+  @@map("itinerary_days")
+}
+
+model ItineraryItem {
+  id          String   @id @default(cuid())
+  dayId       String
+  startTime   String   // "HH:mm"
+  endTime     String   // "HH:mm"
+  title       String
+  description String?  @db.Text
+  location    String?
+  address     String?
+  lat         Float?
+  lng         Float?
+  category    String?  // "accommodation", "activity", "food", "transport"
+  bookingUrl  String?
+  isAiGenerated Boolean @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  day ItineraryDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  @@map("itinerary_items")
+}
+
+// ─── Meetings ─────────────────────────────────────────────────────────────────
+
+model Meeting {
+  id          String        @id @default(cuid())
+  tripId      String
+  title       String
+  scheduledAt DateTime
+  duration    Int           @default(30) // minutes
+  meetingUrl  String?
+  status      MeetingStatus @default(SCHEDULED)
+  createdAt   DateTime      @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("meetings")
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
