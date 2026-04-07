@@ -44,7 +44,11 @@ export default async function AvailabilityPage({ params }: { params: Promise<{ i
       return acc;
     }, {})
   );
-  const commonWindow = computeCommonAvailability(latestPerUser);
+  const isSolo = members.length === 1;
+  // For solo travelers, their availability IS the window; no overlap needed
+  const commonWindow = isSolo && latestPerUser.length === 1
+    ? { start: latestPerUser[0].startTime, end: latestPerUser[0].endTime }
+    : computeCommonAvailability(latestPerUser);
   const isOwner = trip.ownerId === userId;
   const datesConfirmed = !!(trip.startDate && trip.endDate);
 
@@ -59,9 +63,13 @@ export default async function AvailabilityPage({ params }: { params: Promise<{ i
         <span className="text-gray-700">Availability</span>
       </div>
 
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Find a common time</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        {isSolo ? "Pick your travel dates" : "Find a common time"}
+      </h1>
       <p className="text-gray-500 mb-8">
-        Submit your available window and Wevi will calculate the longest time that works for everyone.
+        {isSolo
+          ? "Select when you want to travel and confirm your dates."
+          : "Submit your available window and Wevi will calculate the longest time that works for everyone."}
       </p>
 
       {/* Common window result */}
@@ -70,7 +78,9 @@ export default async function AvailabilityPage({ params }: { params: Promise<{ i
           <div className="flex items-start gap-3">
             <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-green-800">Common window found! 🎉</p>
+              <p className="font-semibold text-green-800">
+                {isSolo ? "Your travel dates" : "Common window found!"} 🎉
+              </p>
               <p className="text-green-700 text-sm mt-1">
                 {formatDateTime(commonWindow.start)} → {formatDateTime(commonWindow.end)}
               </p>
@@ -92,7 +102,7 @@ export default async function AvailabilityPage({ params }: { params: Promise<{ i
             </div>
           </div>
         </div>
-      ) : availabilities.length >= 2 ? (
+      ) : !isSolo && availabilities.length >= 2 ? (
         <div className="card p-5 bg-yellow-50 border border-yellow-200 mb-6">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />

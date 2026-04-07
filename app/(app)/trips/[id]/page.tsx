@@ -9,16 +9,17 @@ import {
 import { formatDate, tripStatusLabel, tripStatusColor } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import InvitePanel from "@/components/trips/InvitePanel";
+import SkipToSchedulingButton from "@/components/trips/SkipToSchedulingButton";
 import LeaveTripButton from "@/components/trips/LeaveTripButton";
 
 export const dynamic = "force-dynamic";
 
 const STEPS = [
-  { key: "PLANNING",     label: "Gather members",       href: "",              icon: Users },
-  { key: "SCHEDULING",   label: "Find a common time",   href: "availability",  icon: Calendar },
-  { key: "DESTINATION",  label: "Choose destination",   href: "destination",   icon: MapPin },
-  { key: "ITINERARY",    label: "Build itinerary",      href: "itinerary",     icon: Sparkles },
-  { key: "CONFIRMED",    label: "Confirmed!",            href: "",              icon: CheckCircle2 },
+  { key: "PLANNING",     label: "Invite members (optional)", href: "",              icon: Users },
+  { key: "SCHEDULING",   label: "Pick your dates",           href: "availability",  icon: Calendar },
+  { key: "DESTINATION",  label: "Choose destination",        href: "destination",   icon: MapPin },
+  { key: "ITINERARY",    label: "Build itinerary",           href: "itinerary",     icon: Sparkles },
+  { key: "CONFIRMED",    label: "Confirmed!",                href: "",              icon: CheckCircle2 },
 ];
 
 const STATUS_ORDER = ["PLANNING", "SCHEDULING", "DESTINATION", "ITINERARY", "CONFIRMED", "COMPLETED"];
@@ -112,7 +113,10 @@ export default async function TripPage({ params }: { params: Promise<{ id: strin
                       {done ? "View" : "Go"}
                     </Link>
                   )}
-                  {active && !step.href && isOwner && (
+                  {active && !step.href && isOwner && step.key === "PLANNING" && (
+                    <SkipToSchedulingButton tripId={id} />
+                  )}
+                  {active && !step.href && isOwner && step.key !== "PLANNING" && (
                     <span className="text-xs text-brand-600 font-medium">Current step</span>
                   )}
                 </div>
