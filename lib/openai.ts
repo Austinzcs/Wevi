@@ -1,8 +1,11 @@
 import OpenAI from "openai";
 
-export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is not configured. Please add it to your environment variables.");
+  }
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 export interface ItineraryGenerationParams {
   destination: string;
@@ -59,6 +62,7 @@ Return ONLY a valid JSON array of days, where each day has this structure:
 Include breakfast, lunch, dinner, and main activities each day. Be specific with real locations.
 `.trim();
 
+  const openai = getOpenAIClient();
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [{ role: "user", content: prompt }],
