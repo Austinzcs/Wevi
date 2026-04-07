@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50" fill="none">
+  <!-- W mark styled as a route/path -->
+  <path d="M10 12 L20 38 L30 20 L40 38 L50 12" stroke="#3B82F6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Location pin dot on the W -->
+  <circle cx="30" cy="14" r="4" fill="#F59E0B"/>
+  <!-- Text: evi -->
+  <text x="56" y="36" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="700" fill="#1E293B">
+    evi
+  </text>
+</svg>

@@ -26,8 +26,9 @@ export default function Navbar({ user }: NavbarProps) {
     <header className="bg-white border-b border-gray-100 sticky top-0 z-40">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
         {/* Logo */}
-        <Link href="/dashboard" className="text-xl font-bold text-brand-600">
-          wevi
+        <Link href="/dashboard" className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Wevi" className="h-8" />
         </Link>
 
         {/* Nav links */}
