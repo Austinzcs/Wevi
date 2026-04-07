@@ -57,7 +57,7 @@ export default function GenerateItineraryButton({ tripId, hasItinerary }: Props)
               <div>
                 <h2 className="text-lg font-semibold">Generate itinerary with AI</h2>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {hasItinerary ? "This will replace the current itinerary." : "Powered by GPT-4o mini."}
+                  {hasItinerary ? "This will replace the current itinerary." : "Powered by Claude AI."}
                 </p>
               </div>
               <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-gray-100">
